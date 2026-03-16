@@ -59,6 +59,26 @@ vault.on('stream_error', (error) => {
 });
 ```
 
+### Handling Errors
+
+Always use `try...catch` blocks to handle SDK errors. The SDK provides `VaultError` and `ValidationError` for precise error catching.
+
+```javascript
+import { VaultError, ValidationError } from "vault-sdk-dev";
+
+try {
+  await vault.getAllFiles('your-vault-id');
+} catch (error) {
+  if (error instanceof ValidationError) {
+    console.error("Invalid Parameter:", error.param);
+  } else if (error instanceof VaultError) {
+    console.error("API Error Code:", error.code);
+  }
+}
+```
+
+See the **[Error Handling](./Error%20Handling/README.md)** section for more details.
+
 ## Structure
 
 The documentation is organized into the following sections:
@@ -67,3 +87,4 @@ The documentation is organized into the following sections:
 - **[Folder Operations](./Folder%20Operations/README.md)**: Manage folders (create, delete).
 - **[Storage Operations](./Storage%20Operations/README.md)**: Manage storage plans and subscriptions.
 - **[User Operations](./User%20Operations/README.md)**: Manage vault users and imports.
+- **[Error Handling](./Error%20Handling/README.md)**: Detailed guide on handling SDK errors and codes.
