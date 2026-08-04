@@ -19,14 +19,33 @@ Creates a new folder within the specified vault. You can optionally specify a pa
 ```javascript
 // Create a folder in the root directory
 const rootFolder = await vault.createFolder('your-vault-id', 'Documents');
+console.log(rootFolder);
 
-// Create a subfolder
-const subFolder = await vault.createFolder('your-vault-id', 'Project Alpha', rootFolder.id);
+// Create a subfolder, using the ID returned by the call above
+const subFolder = await vault.createFolder(
+  'your-vault-id',
+  'Project Alpha',
+  'parent-folder-id'
+);
 ```
 
 **Response:**
 
 Returns an object containing the details of the newly created folder, including its unique ID.
+
+## Rename Folder
+
+### `renameItem(vaultId, itemId, newName)`
+
+`renameItem()` works on folders as well as files — pass the folder's ID as `itemId`.
+
+**Example:**
+
+```javascript
+await vault.renameItem('your-vault-id', 'folder-id', 'Archived Documents');
+```
+
+See **[File Operations](../File%20Operations/README.md#renameitemvaultid-itemid-newname)** for full details.
 
 ## Delete Folder
 
