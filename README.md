@@ -22,7 +22,6 @@ VAULT_ACCESS_KEY=your-access-key
 VAULT_SECRET_KEY=your-secret-key
 VAULT_CLIENT_API_KEY=your-client-api-key
 VAULT_BASE_URL=https://api.your-service.com
-VAULT_WS_URL=wss://api.your-service.com/ws
 ```
 
 ## Usage
@@ -43,21 +42,21 @@ const vault = new Vault({
 });
 ```
 
-### WebSocket Connection
+All parameters are required — the constructor throws a `VaultError` with code
+`MISSING_CONFIG` listing any that are absent.
 
-To listen for real-time updates:
+### Uploading a File
+
+Uploading takes a single call — pass a path, a `{ buffer, name }` object, or a
+`File`/`Blob`, and the SDK handles hashing, the presigned URL, the transfer, and
+registration for you:
 
 ```javascript
-await vault.connectToWebsocket();
-
-vault.on('message', (data) => {
-  console.log('Received message:', data);
-});
-
-vault.on('stream_error', (error) => {
-  console.error('WebSocket error:', error);
-});
+const result = await vault.uploadFile('./report.pdf', 'your-vault-id');
 ```
+
+See **[File Operations](./File%20Operations/README.md)** for all accepted file forms
+and multi-file uploads.
 
 ### Handling Errors
 
@@ -83,8 +82,46 @@ See the **[Error Handling](./Error%20Handling/README.md)** section for more deta
 
 The documentation is organized into the following sections:
 
-- **[File Operations](./File%20Operations/README.md)**: Manage files (upload, download, delete, rename, etc.).
-- **[Folder Operations](./Folder%20Operations/README.md)**: Manage folders (create, delete).
-- **[Storage Operations](./Storage%20Operations/README.md)**: Manage storage plans and subscriptions.
-- **[User Operations](./User%20Operations/README.md)**: Manage vault users and imports.
+- **[File Operations](./File%20Operations/README.md)**: Upload, search, rename, star, and delete files.
+- **[Folder Operations](./Folder%20Operations/README.md)**: Create, rename, and delete folders.
+- **[Storage Operations](./Storage%20Operations/README.md)**: Storage usage, plans, subscriptions, and upcoming plans.
+- **[User Operations](./User%20Operations/README.md)**: Create vaults for users and import existing vaults.
 - **[Error Handling](./Error%20Handling/README.md)**: Detailed guide on handling SDK errors and codes.
+
+## API Reference
+
+| Method | Section |
+| --- | --- |
+| `uploadFile(file, vaultId, parentId?)` | [File Operations](./File%20Operations/README.md) |
+| `uploadFiles(files, vaultId, parentId?)` | [File Operations](./File%20Operations/README.md) |
+| `getFiles(vaultId, query?)` | [File Operations](./File%20Operations/README.md) |
+| `getAllFiles(vaultId)` | [File Operations](./File%20Operations/README.md) |
+| `deleteFile(vaultId, fileId)` | [File Operations](./File%20Operations/README.md) |
+| `renameItem(vaultId, itemId, newName)` | [File Operations](./File%20Operations/README.md) |
+| `addToStarred(vaultId, fileId, isStarred)` | [File Operations](./File%20Operations/README.md) |
+| `getStarredFiles(vaultId)` | [File Operations](./File%20Operations/README.md) |
+| `createFolder(vaultId, folderName, parentId?)` | [Folder Operations](./Folder%20Operations/README.md) |
+| `deleteFolder(vaultId, folderId)` | [Folder Operations](./Folder%20Operations/README.md) |
+| `getStorageDetails(vaultId)` | [Storage Operations](./Storage%20Operations/README.md) |
+| `getAllPlans(vaultId)` | [Storage Operations](./Storage%20Operations/README.md) |
+| `buyPlan(vaultId, priceId)` | [Storage Operations](./Storage%20Operations/README.md) |
+| `getSubscriptions(vaultId)` | [Storage Operations](./Storage%20Operations/README.md) |
+| `cancelSubscription(vaultId)` | [Storage Operations](./Storage%20Operations/README.md) |
+| `createUpcomingPlan(vaultId, priceId)` | [Storage Operations](./Storage%20Operations/README.md) |
+| `cancelUpcomingPlan(vaultId)` | [Storage Operations](./Storage%20Operations/README.md) |
+| `createVault(email, platformId?)` | [User Operations](./User%20Operations/README.md) |
+| `importVault(vaultId, platformId?)` | [User Operations](./User%20Operations/README.md) |
+
+## Migrating from earlier versions
+
+If you are upgrading an integration written against an older release, note these
+breaking changes:
+
+| Previously | Now |
+| --- | --- |
+| `createPlatformUser(email, platformId)` | `createVault(email, platformId?)` — `platformId` is now optional |
+| `getMedia(vaultId)` | Removed. Use `getAllFiles(vaultId)` or `getFiles(vaultId, query)` |
+| `getPresignedUrl({...})` + manual `PUT` + `registerUpload({...})` | Removed as public methods. `uploadFile()` performs all three steps internally |
+| `renameFile(vaultId, itemId, newName)` | `renameItem(vaultId, itemId, newName)`. `renameFile()` still works as an alias |
+| `uploadFiles()` required `{ name, buffer }` objects | Entries may also be a path string, `{ path }`, or a `File`/`Blob`; `type` is optional |
+| `importVault(vaultId, platformId)` required `platformId` | `platformId` is optional |
