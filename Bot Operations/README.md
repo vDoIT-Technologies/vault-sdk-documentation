@@ -1,7 +1,8 @@
 # Bot Operations
 
-This section covers creating bots, uploading files to their dedicated folders,
-and adding existing drive files and folders to bot knowledge.
+This section covers creating bots, retrieving their details, uploading files to their dedicated folders,
+and adding existing drive files and folders to bot knowledge. For live chat, see
+**[Bot Chat Operations](../Bot%20Chat%20Operations/README.md)**.
 
 ## Create Bot
 
@@ -74,6 +75,91 @@ Returns an object with `success`, `message`, and `data`:
 
 See **[Error Handling](../Error%20Handling/README.md)** for error types and other
 API or network errors.
+
+## Get Bot Details
+
+### `getBotDetails(vaultId, botId)`
+
+Retrieves one bot's details, including its associated files and linked drive
+folders. Omit `botId` to retrieve details for every bot owned by the vault user.
+
+**Parameters:**
+
+- `vaultId` (String): The ID of the vault that owns the bot or bots. Required.
+- `botId` (String, optional): The ID of a specific bot. When omitted, returns
+  all bots in the vault.
+
+The first argument is always `vaultId`. To retrieve a specific bot, pass both
+arguments; `getBotDetails(botId)` would treat that ID as a vault ID.
+
+**Single-bot example:**
+
+```javascript
+try {
+  const result = await vault.getBotDetails('your-vault-id', 'bot-id');
+
+  console.log('Bot:', result.data);
+  console.log('Files:', result.data.files);
+  console.log('Linked folders:', result.data.folders);
+} catch (error) {
+  console.error('Could not fetch bot:', error.code, error.message);
+}
+```
+
+**All-bots example:**
+
+```javascript
+try {
+  const result = await vault.getBotDetails('your-vault-id');
+
+  for (const bot of result.data) {
+    console.log('Bot:', bot.id, bot.name);
+    console.log('Files:', bot.files);
+    console.log('Linked folders:', bot.folders);
+  }
+} catch (error) {
+  console.error('Could not fetch bots:', error.code, error.message);
+}
+```
+
+**Response:**
+
+Returns an object with:
+
+- `success` (Boolean): `true` when the request succeeds.
+- `message` (String): `"Bot fetched successfully"` for one bot or
+  `"Bots fetched successfully"` for all bots.
+- `data` (Object | Array): A detailed bot object when `botId` is supplied,
+  or an array of detailed bot objects when it is omitted. The array is empty
+  when the vault user has no bots.
+
+Each bot includes its metadata, such as `id`, `name`, `description`, and
+`profession`, plus:
+
+- `files` (Array): Associated bot files, newest first, including file details,
+  processing status, and drive asset information. Entries also include
+  `sharedWith` and `canDeletePermanently` to describe sharing with other bots.
+- `folders` (Array): Linked drive folders, including their `folderId`, `name`,
+  and `parentId`. These are folder links, not the bot's dedicated folder object
+  returned by `createBot()`.
+- `llm` (Object | null): Custom model configuration when configured; otherwise
+  `null`. Includes provider and model details and an API key hint, without
+  returning the stored API key.
+
+**Errors:**
+
+- `INVALID_PARAMETER`: `vaultId` is missing or invalid, or a supplied `botId`
+  fails SDK validation.
+- `NOT_FOUND`: The requested bot does not exist or is not owned by the vault user.
+- `UNAUTHORIZED` / `FORBIDDEN`: Authentication or SDK access is rejected.
+
+See **[Error Handling](../Error%20Handling/README.md)** for SDK error types and
+other API or network errors.
+
+## Connect to Bot Chat
+
+See **[Bot Chat Operations](../Bot%20Chat%20Operations/README.md)** for connecting,
+joining a bot, sending messages and typing indicators, and disconnecting.
 
 ## Upload Files to a Bot
 

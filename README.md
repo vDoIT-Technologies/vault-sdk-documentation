@@ -58,6 +58,43 @@ const result = await vault.uploadFile('./report.pdf', 'your-vault-id');
 See **[File Operations](./File%20Operations/README.md)** for all accepted file forms
 and multi-file uploads.
 
+### Getting Bot Details
+
+Retrieve a bot with its associated files and linked folders, or omit `botId`
+to retrieve all bots in the vault:
+
+```javascript
+const result = await vault.getBotDetails('your-vault-id', 'bot-id');
+console.log(result.data);
+
+const allBots = await vault.getBotDetails('your-vault-id');
+console.log(allBots.data);
+```
+
+`vaultId` is required as the first argument. See
+**[Bot Operations](./Bot%20Operations/README.md#get-bot-details)** for parameters,
+response fields, and error-handling examples.
+
+### Connecting to Bot Chat
+
+Open a live chat connection and automatically join a bot:
+
+```javascript
+vault.on('bot_chat_chat_history', (payload) => {
+  console.log('Joined bot:', payload.botName);
+});
+vault.on('bot_chat_error', (payload) => console.error(payload.message));
+vault.on('bot_chat_stream_error', (error) => console.error(error.message));
+
+await vault.connectToBotChat('your-vault-id', { botId: 'bot-id' });
+```
+
+The SDK obtains an access token automatically unless one is supplied. The
+promise resolves when the socket opens; chat events report joining the bot and
+receiving replies. Close the connection with `vault.disconnectBotChat()` when
+finished. See **[Bot Chat Operations](./Bot%20Chat%20Operations/README.md#connect-to-bot-chat)**
+for options, a messaging example, events, and error handling.
+
 ### Uploading Files to a Bot
 
 Upload a single file or an array to a bot's dedicated folder and start knowledge
@@ -143,7 +180,8 @@ The documentation is organized into the following sections:
 
 - **[File Operations](./File%20Operations/README.md)**: Upload, search, rename, star, and delete files.
 - **[Folder Operations](./Folder%20Operations/README.md)**: Create, rename, and delete folders.
-- **[Bot Operations](./Bot%20Operations/README.md)**: Create bots, upload files, and add existing drive files and folders to bot knowledge.
+- **[Bot Operations](./Bot%20Operations/README.md)**: Create bots, retrieve details, upload files, and add existing drive files and folders to bot knowledge.
+- **[Bot Chat Operations](./Bot%20Chat%20Operations/README.md)**: Connect to live chat, join bots, send messages and typing indicators, and disconnect.
 - **[Storage Operations](./Storage%20Operations/README.md)**: Storage usage, plans, subscriptions, and upcoming plans.
 - **[User Operations](./User%20Operations/README.md)**: Create vaults for users and import existing vaults.
 - **[Error Handling](./Error%20Handling/README.md)**: Detailed guide on handling SDK errors and codes.
@@ -163,6 +201,12 @@ The documentation is organized into the following sections:
 | `createFolder(vaultId, folderName, parentId?)` | [Folder Operations](./Folder%20Operations/README.md) |
 | `deleteFolder(vaultId, folderId)` | [Folder Operations](./Folder%20Operations/README.md) |
 | `createBot(vaultId, bot)` | [Bot Operations](./Bot%20Operations/README.md) |
+| `getBotDetails(vaultId, botId?)` | [Bot Operations](./Bot%20Operations/README.md#get-bot-details) |
+| `connectToBotChat(vaultId, options?)` | [Bot Chat Operations](./Bot%20Chat%20Operations/README.md#connect-to-bot-chat) |
+| `joinBotChat(botId, sessionId?)` | [Bot Chat Operations](./Bot%20Chat%20Operations/README.md#join-bot-chat) |
+| `sendBotChatMessage(message, history?)` | [Bot Chat Operations](./Bot%20Chat%20Operations/README.md#send-a-chat-message) |
+| `sendBotChatTyping()` | [Bot Chat Operations](./Bot%20Chat%20Operations/README.md#send-a-typing-indicator) |
+| `disconnectBotChat()` | [Bot Chat Operations](./Bot%20Chat%20Operations/README.md#disconnect-from-bot-chat) |
 | `uploadFilesToBot(files, vaultId, botId)` | [Bot Operations](./Bot%20Operations/README.md#upload-files-to-a-bot) |
 | `addDriveFilesToBot(vaultId, botId, fileIds)` | [Bot Operations](./Bot%20Operations/README.md#add-drive-files-to-a-bot) |
 | `addDriveFoldersToBot(vaultId, botId, folderIds)` | [Bot Operations](./Bot%20Operations/README.md#add-drive-folders-to-a-bot) |
