@@ -84,6 +84,7 @@ The documentation is organized into the following sections:
 
 - **[File Operations](./File%20Operations/README.md)**: Upload, search, rename, star, and delete files.
 - **[Folder Operations](./Folder%20Operations/README.md)**: Create, rename, and delete folders.
+- **[Bot Operations](./Bot%20Operations/README.md)**: Create bots and their dedicated folders.
 - **[Storage Operations](./Storage%20Operations/README.md)**: Storage usage, plans, subscriptions, and upcoming plans.
 - **[User Operations](./User%20Operations/README.md)**: Create vaults for users and import existing vaults.
 - **[Error Handling](./Error%20Handling/README.md)**: Detailed guide on handling SDK errors and codes.
@@ -102,6 +103,7 @@ The documentation is organized into the following sections:
 | `getStarredFiles(vaultId)` | [File Operations](./File%20Operations/README.md) |
 | `createFolder(vaultId, folderName, parentId?)` | [Folder Operations](./Folder%20Operations/README.md) |
 | `deleteFolder(vaultId, folderId)` | [Folder Operations](./Folder%20Operations/README.md) |
+| `createBot(vaultId, bot)` | [Bot Operations](./Bot%20Operations/README.md) |
 | `getStorageDetails(vaultId)` | [Storage Operations](./Storage%20Operations/README.md) |
 | `getAllPlans(vaultId)` | [Storage Operations](./Storage%20Operations/README.md) |
 | `buyPlan(vaultId, priceId)` | [Storage Operations](./Storage%20Operations/README.md) |
