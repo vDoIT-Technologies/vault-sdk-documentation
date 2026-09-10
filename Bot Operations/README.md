@@ -3,6 +3,8 @@
 This section covers creating bots, retrieving their details, uploading files to their dedicated folders,
 and adding existing drive files and folders to bot knowledge. For live chat, see
 **[Bot Chat Operations](../Bot%20Chat%20Operations/README.md)**.
+For retrieving saved chat sessions and message history, see
+**[Bot Session Operations](../Bot%20Session%20Operations/README.md)**.
 
 ## Create Bot
 

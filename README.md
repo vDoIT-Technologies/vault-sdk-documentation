@@ -104,6 +104,42 @@ This method returns a plain string. See
 **[Bot Operations](./Bot%20Operations/README.md#get-bot-file-text)** for file ID
 selection, text availability, and error handling.
 
+### Exporting Bot Sessions
+
+Export one or more saved sessions to the drive or into a bot's knowledge set:
+
+```javascript
+const result = await vault.exportBotSessions(
+  'your-vault-id',
+  'bot-id',
+  ['session-id-1', 'session-id-2'],
+  'drive'
+);
+console.log(result.data.fileName);
+```
+
+Use `'brain'` as the save option to ingest the export into the source bot, or
+pass a fifth `targetBotId` to ingest it into another bot owned by the same user.
+See **[Bot Session Operations](./Bot%20Session%20Operations/README.md#export-bot-sessions)**
+for response fields and errors.
+
+### Deleting Bot Sessions
+
+Permanently delete one or more sessions and their messages:
+
+```javascript
+const result = await vault.deleteBotSessions(
+  'your-vault-id',
+  'bot-id',
+  ['session-id-1', 'session-id-2']
+);
+console.log(result.data.deletedCount);
+```
+
+The method also accepts a single session ID. See
+**[Bot Session Operations](./Bot%20Session%20Operations/README.md#delete-bot-sessions)**
+for filtering behavior, responses, and errors.
+
 ### Cancelling or Retrying Bot File Processing
 
 Use `cancelBotFile(vaultId, botId, fileId)` for a processing file or
@@ -227,6 +263,7 @@ The documentation is organized into the following sections:
 - **[Folder Operations](./Folder%20Operations/README.md)**: Create, rename, and delete folders.
 - **[Bot Operations](./Bot%20Operations/README.md)**: Create bots, retrieve details, upload files, and add existing drive files and folders to bot knowledge.
 - **[Bot Chat Operations](./Bot%20Chat%20Operations/README.md)**: Connect to live chat, join bots, send messages and typing indicators, and disconnect.
+- **[Bot Session Operations](./Bot%20Session%20Operations/README.md)**: Retrieve and export saved bot chat sessions and message history.
 - **[Storage Operations](./Storage%20Operations/README.md)**: Storage usage, plans, subscriptions, and upcoming plans.
 - **[User Operations](./User%20Operations/README.md)**: Create vaults for users and import existing vaults.
 - **[Error Handling](./Error%20Handling/README.md)**: Detailed guide on handling SDK errors and codes.
@@ -248,6 +285,9 @@ The documentation is organized into the following sections:
 | `createBot(vaultId, bot)` | [Bot Operations](./Bot%20Operations/README.md) |
 | `deleteBot(botId, vaultId)` | [Bot Operations](./Bot%20Operations/README.md#delete-bot) |
 | `getBotDetails(vaultId, botId?)` | [Bot Operations](./Bot%20Operations/README.md#get-bot-details) |
+| `getBotSessions(vaultId, botId, sessionId?)` | [Bot Session Operations](./Bot%20Session%20Operations/README.md#get-bot-sessions) |
+| `deleteBotSessions(vaultId, botId, sessionIds)` | [Bot Session Operations](./Bot%20Session%20Operations/README.md#delete-bot-sessions) |
+| `exportBotSessions(vaultId, botId, sessionIds, saveOption, targetBotId?)` | [Bot Session Operations](./Bot%20Session%20Operations/README.md#export-bot-sessions) |
 | `getBotFileText(vaultId, botId, fileId)` | [Bot Operations](./Bot%20Operations/README.md#get-bot-file-text) |
 | `updateBotFileAction(vaultId, botId, fileId, action)` (internal helper) | [Bot Operations](./Bot%20Operations/README.md#update-bot-file-action) |
 | `cancelBotFile(vaultId, botId, fileId)` | [Bot Operations](./Bot%20Operations/README.md#cancelbotfilevaultid-botid-fileid) |
