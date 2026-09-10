@@ -6,6 +6,314 @@ and adding existing drive files and folders to bot knowledge. For live chat, see
 For retrieving saved chat sessions and message history, see
 **[Bot Session Operations](../Bot%20Session%20Operations/README.md)**.
 
+## Quote Transcription
+
+### `quoteTranscription(vaultId, botId, payload)`
+
+Estimates the Twin Points cost of transcribing audio and video before you upload
+files or attach drive folders to a bot. The quote does not reserve or charge
+points and does not start ingestion.
+
+**Parameters:**
+
+- `vaultId` (String): The vault that owns the target bot. Required.
+- `botId` (String): The target bot ID. Required.
+- `payload` (Object, optional): Inputs to quote. Defaults to `{}` and must
+  contain at least one usable file or folder ID.
+  - `files` (Array<Object>, optional): Direct file metadata. Each entry supports:
+    - `name` (String): File name, required for that entry.
+    - `size` (Number): File size in bytes. Defaults to `0` when omitted.
+    - `fileId` (String, optional): Existing drive asset ID when quoting a linked
+      file. Existing transcripts can reduce its estimate to zero.
+    - `durationSeconds` (Number, optional): Measured media duration. When
+      supplied, it is preferred over estimating duration from file size.
+  - `folderIds` (Array<String>, optional): Existing drive folder IDs to inspect.
+    Folder contents, including nested folders, are scanned for media files.
+
+The SDK trims file names and IDs, removes duplicate folder IDs, ignores malformed
+file entries and blank IDs, and includes only supported audio/video extensions in
+the estimate. Non-media files are ignored. Up to 50 folders may be quoted in one
+request.
+
+**Quote direct files:**
+
+```javascript
+try {
+  const result = await vault.quoteTranscription('your-vault-id', 'bot-id', {
+    files: [
+      { name: 'customer-call.mp3', size: 12_000_000, durationSeconds: 905 },
+      { name: 'demo.mp4', size: 80_000_000 },
+    ],
+  });
+
+  console.log('Estimated points:', result.data.estimatedPoints);
+  console.log('Available points:', result.data.availablePoints);
+  console.log('Enough points:', result.data.enough);
+} catch (error) {
+  console.error('Could not quote transcription:', error.code, error.message);
+}
+```
+
+**Quote drive files and folders:**
+
+```javascript
+const result = await vault.quoteTranscription('your-vault-id', 'bot-id', {
+  files: [
+    { name: 'podcast.mp3', size: 25_000_000, fileId: 'drive-file-id' },
+  ],
+  folderIds: ['folder-id-1', 'folder-id-2'],
+});
+```
+
+Use the same payload before `uploadFilesToBot()`, `addDriveFilesToBot()`, or
+`addDriveFoldersToBot()` when you want to show a user the expected transcription
+cost. A file listed directly and discovered through a folder is counted once.
+
+**Response:**
+
+Returns the standard response:
+
+```javascript
+{
+  success: true,
+  message: 'Transcription quote',
+  data: {
+    files: [
+      {
+        name: 'customer-call.mp3',
+        isVideo: false,
+        alreadyTranscribed: false,
+        estimatedPoints: 7
+      }
+    ],
+    estimatedPoints: 7,
+    availablePoints: 120,
+    enough: true
+  }
+}
+```
+
+- `data.files` contains one entry for each unique supported media candidate;
+  documents and unsupported file types are omitted.
+- `alreadyTranscribed` is `true` when the backend finds existing extracted
+  transcript content; that item has `estimatedPoints: 0`.
+- `estimatedPoints` is the total estimate for all returned media entries.
+- `availablePoints` is the user's current available Twin Points balance.
+- `enough` is `true` when `availablePoints >= estimatedPoints`.
+
+Estimates use measured duration when available, otherwise file size and media
+type. The final charge can differ because the actual transcription service usage
+is settled after processing.
+
+**Errors:**
+
+- `INVALID_PARAMETER`: `vaultId` or `botId` is invalid, `payload` is not an
+  object, or no usable file entries or folder IDs were supplied.
+- `BAD_REQUEST`: More than 50 folder IDs were supplied, a folder cannot be
+  inspected, or the backend rejects the quote request.
+- `NOT_FOUND`: The bot, folder, or referenced drive file cannot be found or is
+  not owned by the authenticated user.
+- `UNAUTHORIZED` / `FORBIDDEN`: Authentication or SDK access is rejected.
+
+See **[Error Handling](../Error%20Handling/README.md)** for SDK error types and
+other API or network errors.
+
+## Update Bot
+
+### `updateBot(vaultId, botId, updates)`
+
+Updates one or more editable bot settings. This is a partial update: omit fields
+that should remain unchanged. Changes to `description` and `profession` are also
+sent to the bot's personality service so the bot's prompt stays synchronized.
+
+**Parameters:**
+
+- `vaultId` (String): The vault that owns the bot. Required.
+- `botId` (String): The bot ID to update. Required.
+- `updates` (Object): Fields to change. Required. Supported fields are:
+  - `name` (String): Display name. Must be non-empty and at most 50 characters.
+  - `description` (String): Bot personality or description. At most 100 characters.
+  - `profession` (String): Profession label. At most 50 characters; accepts
+    letters, numbers, spaces, and `. , ' - & ( ) /`.
+  - `useLLMFallback` (Boolean): Whether the bot may fall back to the configured
+    LLM when its primary response service is unavailable.
+  - `wordLimit` (Integer): Response word limit from 10 through 800.
+
+The SDK trims `name` before sending it. The backend trims text fields as it
+saves them. Unsupported fields are not included in the request. Passing an
+explicit value of the wrong type throws `INVALID_PARAMETER` before the request
+is sent.
+
+**Example:**
+
+```javascript
+try {
+  const result = await vault.updateBot('your-vault-id', 'bot-id', {
+    name: 'Support Assistant',
+    description: 'Answers customer questions clearly and concisely',
+    profession: 'Customer Support',
+    useLLMFallback: true,
+    wordLimit: 300,
+  });
+
+  console.log(result.message); // Bot updated successfully
+  console.log('Updated bot:', result.data);
+} catch (error) {
+  console.error('Could not update bot:', error.code, error.message);
+}
+```
+
+A single-field update is also valid:
+
+```javascript
+await vault.updateBot('your-vault-id', 'bot-id', { wordLimit: 200 });
+```
+
+**Response:**
+
+Returns the standard response:
+
+```javascript
+{
+  success: true,
+  message: 'Bot updated successfully',
+  data: {
+    id: 'bot-id',
+    name: 'Support Assistant',
+    description: 'Answers customer questions clearly and concisely',
+    profession: 'Customer Support',
+    wordLimit: 300,
+    useLLMFallback: true,
+    llm: null
+  }
+}
+```
+
+`data` is the updated serialized bot. Sensitive custom LLM credentials are not
+returned; any configured `llm` object contains metadata and an API-key hint only.
+
+**Errors:**
+
+- `INVALID_PARAMETER`: A required argument has the wrong type, the name is
+  empty, or a field fails SDK validation.
+- `BAD_REQUEST`: A name exceeds 50 characters, a description exceeds 100, a
+  profession exceeds 50 or contains unsupported characters, `wordLimit` is
+  outside 10–800 or is not an integer, or `useLLMFallback` is not boolean.
+- `NOT_FOUND`: The bot does not exist or is not owned by the vault user.
+- `UNAUTHORIZED` / `FORBIDDEN`: Authentication or SDK access is rejected.
+- `CONFLICT`: The backend reports a conflicting bot update.
+
+See **[Error Handling](../Error%20Handling/README.md)** for SDK error types and
+other API or network errors.
+
+## Remove a Bot Asset
+
+### `removeBotAsset(vaultId, botId, assetType, assetId, options)`
+
+Removes a file or a linked drive folder from a bot. The behavior depends on
+`assetType`: removing a folder only unlinks it, while removing a file can either
+detach it from the bot or permanently delete its drive copy.
+
+**Parameters:**
+
+- `vaultId` (String): The vault that owns the bot. Required.
+- `botId` (String): The bot ID. Required.
+- `assetType` (String): Must be `'file'` or `'folder'`. The SDK trims and
+  lowercases this value.
+- `assetId` (String): The bot file ID when `assetType` is `'file'`, or the drive
+  folder ID when `assetType` is `'folder'`. Required.
+- `options` (Object, optional): File-removal flags. Defaults to `{}`.
+  `permanent` and `keepTranscript` are supported only for files.
+
+| Option | Type | Applies to | Behavior |
+| --- | --- | --- | --- |
+| `permanent` | Boolean | Files | `false` (default) detaches the file and preserves its drive copy. `true` also deletes the drive file and its stored transcript. |
+| `keepTranscript` | Boolean | Files | With `permanent: true`, deletes the original media while keeping its extracted transcript as a drive file. Requires a stored transcript. |
+
+Folder removal supports neither option: supplying `permanent` or
+`keepTranscript` for `assetType: 'folder'` throws `INVALID_PARAMETER`.
+
+**Remove a file from the bot:**
+
+```javascript
+try {
+  const result = await vault.removeBotAsset(
+    'your-vault-id',
+    'bot-id',
+    'file',
+    'bot-file-id'
+  );
+
+  console.log(result.message);
+  console.log(result.data);
+} catch (error) {
+  console.error('Could not remove bot file:', error.code, error.message);
+}
+```
+
+With the default `permanent: false`, bot-uploaded files are moved to the drive
+root when possible. Files originally linked from elsewhere stay in their
+existing drive location.
+
+**Permanently remove a file but keep its transcript:**
+
+```javascript
+const result = await vault.removeBotAsset(
+  'your-vault-id',
+  'bot-id',
+  'file',
+  'bot-file-id',
+  { permanent: true, keepTranscript: true }
+);
+console.log(result.data.transcriptKept); // true
+```
+
+**Unlink a folder:**
+
+```javascript
+const result = await vault.removeBotAsset(
+  'your-vault-id',
+  'bot-id',
+  'folder',
+  'folder-id'
+);
+console.log(result.message); // Folder removed from the bot. It is still in your drive.
+```
+
+Unlinking a folder does not delete the folder or its files. It also does not
+remove the bot's dedicated folder.
+
+**Response:**
+
+Returns the standard `{ success, message, data }` response. The message and
+data fields vary by action:
+
+- File detach: `data.botFileRemoved` is `true`, `data.driveFileRemoved` is
+  `false`, and `data.movedToRoot` indicates whether a bot-uploaded file moved to
+  the drive root.
+- Permanent file delete: `data.botFileRemoved` and `data.driveFileRemoved` are
+  `true`; `data.storageFreed` reports released storage.
+- Permanent media delete with transcript retention: `data.transcriptKept` is
+  `true`, `data.driveFileRemoved` is `true`, and `data.transcriptFile` identifies
+  the retained transcript when available.
+- Folder unlink: `data.id`, `data.name`, `data.parentId`, `data.botId`, and
+  `data.removedFiles` describe the unlinked folder.
+
+**Errors:**
+
+- `INVALID_PARAMETER`: A required ID is invalid, `assetType` is not `'file'` or
+  `'folder'`, file-only options are used for a folder, or an option is not a
+  boolean.
+- `BAD_REQUEST`: A transcript was requested but none exists, the file is shared
+  with another bot and cannot be permanently deleted, or the asset operation is
+  not allowed.
+- `NOT_FOUND`: The bot or asset does not exist, is not owned by the user, or the
+  file/folder is not associated with the bot.
+- `UNAUTHORIZED` / `FORBIDDEN`: Authentication or SDK access is rejected.
+
+Permanent deletion is irreversible. Use the default detach behavior when the
+drive copy should remain available.
+
 ## Create Bot
 
 ### `createBot(vaultId, bot)`

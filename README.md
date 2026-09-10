@@ -75,6 +75,35 @@ console.log(allBots.data);
 **[Bot Operations](./Bot%20Operations/README.md#get-bot-details)** for parameters,
 response fields, and error-handling examples.
 
+### Updating a Bot
+
+Apply a partial update to a bot's editable settings:
+
+```javascript
+const result = await vault.updateBot('your-vault-id', 'bot-id', {
+  description: 'Answers customer questions clearly',
+  wordLimit: 300,
+});
+console.log(result.data);
+```
+
+See **[Bot Operations](./Bot%20Operations/README.md#update-bot)** for supported
+fields, limits, and errors.
+
+### Quoting Transcription Cost
+
+Estimate Twin Points before uploading or linking media to a bot:
+
+```javascript
+const quote = await vault.quoteTranscription('your-vault-id', 'bot-id', {
+  files: [{ name: 'call.mp3', size: 12_000_000, durationSeconds: 905 }],
+});
+console.log(quote.data.estimatedPoints, quote.data.enough);
+```
+
+See **[Bot Operations](./Bot%20Operations/README.md#quote-transcription)** for
+payload fields, folder scanning, response data, and errors.
+
 ### Deleting a Bot
 
 Delete a bot by passing its ID first and the owning vault ID second:
@@ -86,6 +115,20 @@ await vault.deleteBot('bot-id', 'your-vault-id');
 The bot and its knowledge are removed, while linked drive files and folders are
 preserved. See **[Bot Operations](./Bot%20Operations/README.md#delete-bot)** for
 the response, warnings, and error handling.
+
+### Removing a Bot Asset
+
+Remove a file or unlink a folder from a bot:
+
+```javascript
+await vault.removeBotAsset('your-vault-id', 'bot-id', 'file', 'bot-file-id');
+await vault.removeBotAsset('your-vault-id', 'bot-id', 'folder', 'folder-id');
+```
+
+Pass `{ permanent: true }` for a file to delete its drive copy, or
+`{ permanent: true, keepTranscript: true }` to retain its extracted transcript.
+See **[Bot Operations](./Bot%20Operations/README.md#remove-a-bot-asset)** for
+the complete behavior and response fields.
 
 ### Getting Bot File Text
 
@@ -284,7 +327,10 @@ The documentation is organized into the following sections:
 | `deleteFolder(vaultId, folderId)` | [Folder Operations](./Folder%20Operations/README.md) |
 | `createBot(vaultId, bot)` | [Bot Operations](./Bot%20Operations/README.md) |
 | `deleteBot(botId, vaultId)` | [Bot Operations](./Bot%20Operations/README.md#delete-bot) |
+| `removeBotAsset(vaultId, botId, assetType, assetId, options?)` | [Bot Operations](./Bot%20Operations/README.md#remove-a-bot-asset) |
 | `getBotDetails(vaultId, botId?)` | [Bot Operations](./Bot%20Operations/README.md#get-bot-details) |
+| `updateBot(vaultId, botId, updates)` | [Bot Operations](./Bot%20Operations/README.md#update-bot) |
+| `quoteTranscription(vaultId, botId, payload?)` | [Bot Operations](./Bot%20Operations/README.md#quote-transcription) |
 | `getBotSessions(vaultId, botId, sessionId?)` | [Bot Session Operations](./Bot%20Session%20Operations/README.md#get-bot-sessions) |
 | `deleteBotSessions(vaultId, botId, sessionIds)` | [Bot Session Operations](./Bot%20Session%20Operations/README.md#delete-bot-sessions) |
 | `exportBotSessions(vaultId, botId, sessionIds, saveOption, targetBotId?)` | [Bot Session Operations](./Bot%20Session%20Operations/README.md#export-bot-sessions) |
