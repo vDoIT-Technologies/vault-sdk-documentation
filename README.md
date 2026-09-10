@@ -278,6 +278,34 @@ entry fails, the SDK throws `BAD_REQUEST` with details in
 **[Bot Operations](./Bot%20Operations/README.md#add-drive-folders-to-a-bot)** for
 examples, response fields, and limits.
 
+### Getting Wallet Information
+
+Retrieve the authenticated vault user's Twin Points balance and wallet status:
+
+```javascript
+const wallet = await vault.getWalletInfo('your-vault-id');
+console.log(wallet.data.points, wallet.data.status);
+```
+
+See **[Wallet Operations](./Wallet%20Operations/README.md#get-wallet-info)** for
+response fields and errors.
+
+### Getting Transaction History
+
+Retrieve paginated wallet transactions, optionally filtered by category:
+
+```javascript
+const history = await vault.getTransactionHistory('your-vault-id', {
+  page: 1,
+  limit: 20,
+  category: 'credit',
+});
+console.log(history.data.transactions, history.data.pagination);
+```
+
+See **[Wallet Operations](./Wallet%20Operations/README.md#get-transaction-history)**
+for query options, pagination fields, and errors.
+
 ### Handling Errors
 
 Always use `try...catch` blocks to handle SDK errors. The SDK provides `VaultError` and `ValidationError` for precise error catching.
@@ -308,6 +336,7 @@ The documentation is organized into the following sections:
 - **[Bot Chat Operations](./Bot%20Chat%20Operations/README.md)**: Connect to live chat, join bots, send messages and typing indicators, and disconnect.
 - **[Bot Session Operations](./Bot%20Session%20Operations/README.md)**: Retrieve and export saved bot chat sessions and message history.
 - **[Storage Operations](./Storage%20Operations/README.md)**: Storage usage, plans, subscriptions, and upcoming plans.
+- **[Wallet Operations](./Wallet%20Operations/README.md)**: Retrieve Twin Points wallet balance and status.
 - **[User Operations](./User%20Operations/README.md)**: Create vaults for users and import existing vaults.
 - **[Error Handling](./Error%20Handling/README.md)**: Detailed guide on handling SDK errors and codes.
 
@@ -347,6 +376,8 @@ The documentation is organized into the following sections:
 | `addDriveFilesToBot(vaultId, botId, fileIds)` | [Bot Operations](./Bot%20Operations/README.md#add-drive-files-to-a-bot) |
 | `addDriveFoldersToBot(vaultId, botId, folderIds)` | [Bot Operations](./Bot%20Operations/README.md#add-drive-folders-to-a-bot) |
 | `getStorageDetails(vaultId)` | [Storage Operations](./Storage%20Operations/README.md) |
+| `getWalletInfo(vaultId)` | [Wallet Operations](./Wallet%20Operations/README.md#get-wallet-info) |
+| `getTransactionHistory(vaultId, query?)` | [Wallet Operations](./Wallet%20Operations/README.md#get-transaction-history) |
 | `getAllPlans(vaultId)` | [Storage Operations](./Storage%20Operations/README.md) |
 | `buyPlan(vaultId, priceId)` | [Storage Operations](./Storage%20Operations/README.md) |
 | `getSubscriptions(vaultId)` | [Storage Operations](./Storage%20Operations/README.md) |
