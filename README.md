@@ -75,6 +75,51 @@ console.log(allBots.data);
 **[Bot Operations](./Bot%20Operations/README.md#get-bot-details)** for parameters,
 response fields, and error-handling examples.
 
+### Deleting a Bot
+
+Delete a bot by passing its ID first and the owning vault ID second:
+
+```javascript
+await vault.deleteBot('bot-id', 'your-vault-id');
+```
+
+The bot and its knowledge are removed, while linked drive files and folders are
+preserved. See **[Bot Operations](./Bot%20Operations/README.md#delete-bot)** for
+the response, warnings, and error handling.
+
+### Getting Bot File Text
+
+Retrieve extracted text using a bot file's `id` from `getBotDetails().data.files`:
+
+```javascript
+const text = await vault.getBotFileText(
+  'your-vault-id',
+  'bot-id',
+  'bot-file-id'
+);
+console.log(text);
+```
+
+This method returns a plain string. See
+**[Bot Operations](./Bot%20Operations/README.md#get-bot-file-text)** for file ID
+selection, text availability, and error handling.
+
+### Cancelling or Retrying Bot File Processing
+
+Use `cancelBotFile(vaultId, botId, fileId)` for a processing file or
+`retryBotFile(vaultId, botId, fileId)` for an eligible failed file. Both public
+methods delegate to the internal helper `updateBotFileAction(vaultId, botId,
+fileId, action)`, which accepts `'cancel'` or `'retry'`.
+
+```javascript
+await vault.cancelBotFile('your-vault-id', 'bot-id', 'processing-file-id');
+const retry = await vault.retryBotFile('your-vault-id', 'bot-id', 'failed-file-id');
+console.log(retry.data.status, retry.data.retryCount);
+```
+
+See **[Bot Operations](./Bot%20Operations/README.md#update-bot-file-action)** for
+examples, retry limits, responses, and error handling.
+
 ### Connecting to Bot Chat
 
 Open a live chat connection and automatically join a bot:
@@ -201,7 +246,12 @@ The documentation is organized into the following sections:
 | `createFolder(vaultId, folderName, parentId?)` | [Folder Operations](./Folder%20Operations/README.md) |
 | `deleteFolder(vaultId, folderId)` | [Folder Operations](./Folder%20Operations/README.md) |
 | `createBot(vaultId, bot)` | [Bot Operations](./Bot%20Operations/README.md) |
+| `deleteBot(botId, vaultId)` | [Bot Operations](./Bot%20Operations/README.md#delete-bot) |
 | `getBotDetails(vaultId, botId?)` | [Bot Operations](./Bot%20Operations/README.md#get-bot-details) |
+| `getBotFileText(vaultId, botId, fileId)` | [Bot Operations](./Bot%20Operations/README.md#get-bot-file-text) |
+| `updateBotFileAction(vaultId, botId, fileId, action)` (internal helper) | [Bot Operations](./Bot%20Operations/README.md#update-bot-file-action) |
+| `cancelBotFile(vaultId, botId, fileId)` | [Bot Operations](./Bot%20Operations/README.md#cancelbotfilevaultid-botid-fileid) |
+| `retryBotFile(vaultId, botId, fileId)` | [Bot Operations](./Bot%20Operations/README.md#retrybotfilevaultid-botid-fileid) |
 | `connectToBotChat(vaultId, options?)` | [Bot Chat Operations](./Bot%20Chat%20Operations/README.md#connect-to-bot-chat) |
 | `joinBotChat(botId, sessionId?)` | [Bot Chat Operations](./Bot%20Chat%20Operations/README.md#join-bot-chat) |
 | `sendBotChatMessage(message, history?)` | [Bot Chat Operations](./Bot%20Chat%20Operations/README.md#send-a-chat-message) |
