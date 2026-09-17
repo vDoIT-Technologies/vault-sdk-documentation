@@ -97,8 +97,9 @@ A missing or invalid `vaultId` throws a `ValidationError` instead. See
 ### `uploadFiles(files, vaultId, parentId)`
 
 Uploads multiple files in parallel. Each file is uploaded independently, so one
-failure does not block the others — the promise resolves with a result for every
-entry rather than rejecting.
+failure does not block the others. The promise resolves with a result for every
+entry when at least one succeeds; if every file fails, it throws `UPLOAD_FAILED`
+with the per-file results in `error.data.results`.
 
 **Parameters:**
 
@@ -138,6 +139,12 @@ An array in the same order as `files`, where each entry carries a `status`:
 // Failure — the error is reported, not thrown:
 { status: 'failed', fileName: 'file2.jpg', error: '...', code: 'STORAGE_UPLOAD_FAILED' }
 ```
+
+The default concurrency is 3 and can be changed with
+`VAULT_UPLOAD_CONCURRENCY` up to a maximum of 10. `VAULT_UPLOAD_ROOT`, when
+configured, prevents path uploads from resolving outside the allowed directory.
+Upload URLs must be HTTPS (except local test hosts) and must match the SDK's
+allowed storage hosts or `VAULT_UPLOAD_HOSTS`.
 
 ---
 

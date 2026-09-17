@@ -33,7 +33,8 @@ redemption errors reject the call.
 
 The socket base URL is chosen from `options.wsUrl`, then `VAULT_WS_URL`, then
 `VAULT_BASE_URL`. The SDK sets the path to `/ws/bot-chat`, converts HTTP/HTTPS to
-WS/WSS, and adds the access token as a query parameter.
+WS/WSS, and sends the access token in the `vault-token.*` WebSocket handshake
+subprotocol. Credentials are not placed in the URL.
 
 **Example:**
 
@@ -89,15 +90,14 @@ The same options can include `sessionId` to resume an existing bot conversation.
 
 The promise resolves with connection metadata when the socket opens:
 
-- `token` (String): The access token used for the connection.
-- `url` (String): The WebSocket URL, including its token query parameter.
+- `url` (String): The WebSocket URL without the access token.
 - `botId` (String | null): The requested bot ID, or `null` when omitted.
 - `sessionId` (String | null): The requested session ID, or `null` when omitted.
 
 This is a plain metadata object, without a `success` / `data` wrapper. It confirms
 the socket opened, not that the server accepted the bot join request. A new
-session's ID arrives through chat events. Both `token` and `url` contain
-credentials; avoid logging the connection metadata.
+session's ID arrives through chat events. The URL is safe to log only if your
+own surrounding code does not append credentials.
 
 **Events:**
 
@@ -183,7 +183,7 @@ found, arrive through `bot_chat_error`.
 
 ## Send a Chat Message
 
-### `sendBotChatMessage(message, history)`
+### `sendBotChatMessage(message, history?)`
 
 Sends a user message to the currently joined bot. Connect and wait for
 `bot_chat_chat_history` before calling this method.
@@ -191,14 +191,9 @@ Sends a user message to the currently joined bot. Connect and wait for
 **Parameters:**
 
 - `message` (String): Required, non-empty message text. The SDK trims whitespace.
-- `history` (Array<Object>, optional): Previous conversation turns, in
-  chronological order. Defaults to `[]`. Each entry contains `role` (`'user'`
-  or `'assistant'`) and non-empty string `content`.
-
-The SDK discards history entries with unsupported roles or unusable content and
-trims each retained entry's content. Include only prior turns; the new `message`
-is sent separately. The backend uses supplied usable history as context, or loads
-recent saved session history when none remains.
+- `history` (Array, optional): Retained for backward compatibility and validated
+  as an array, but ignored. The server rebuilds conversation context from the
+  stored session so callers cannot inject assistant turns into the chat history.
 
 **Example:**
 
@@ -210,11 +205,9 @@ vault.on('bot_chat_message_complete', ({ content }) => console.log('Reply:', con
 vault.on('bot_chat_error', (payload) => console.error(payload.message));
 
 try {
-  vault.sendBotChatMessage('How do I upload a file?', [
-    { role: 'user', content: 'What can you help with?' },
-    { role: 'assistant', content: 'I can help you manage files in your vault.' },
-  ]);
-  // To use saved session history, omit the second argument.
+  vault.sendBotChatMessage('How do I upload a file?');
+  // A legacy history argument is accepted but ignored:
+  // vault.sendBotChatMessage('Continue', []);
 } catch (error) {
   console.error('Could not send message:', error.code, error.message);
 }
@@ -226,7 +219,7 @@ Returns `undefined`; the reply arrives through `bot_chat_token` and
 `bot_chat_message_complete`. `bot_chat_session_info` provides the session ID.
 
 An invalid or blank `message`, or a non-array `history`, throws
-`INVALID_PARAMETER`. A socket that is not open throws
+`INVALID_PARAMETER`. A supplied history is never sent to the server. A socket that is not open throws
 `WEBSOCKET_NOT_CONNECTED`. Server-side failures arrive through `bot_chat_error`;
 socket failures arrive through `bot_chat_stream_error`.
 

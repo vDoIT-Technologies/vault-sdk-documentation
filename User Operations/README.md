@@ -4,7 +4,7 @@ This section provides details on creating vaults for users and importing existin
 
 ## Create a Vault for a User
 
-### `createVault(email, platformId)`
+### `createVault(email, platformId?)`
 
 Creates a vault for a user identified by their email address. This is typically the
 starting point for integrating a user into the Vault system.
@@ -20,7 +20,8 @@ call on every sign-in.
 
 - `email` (String): The email address of the user.
 - `platformId` (String, optional): The platform to associate the user with. Omit it
-  to create a platform-less SDK user linked directly to your client.
+  when the configured client API key is already linked to a platform; the server
+  resolves that platform automatically.
 
 **Example:**
 
@@ -30,9 +31,9 @@ try {
   const newUser = await vault.createVault('user@example.com', 'your-platform-id');
   console.log('User created:', newUser);
 
-  // Platform-less SDK user
-  const sdkUser = await vault.createVault('user@example.com');
-  console.log('SDK user created:', sdkUser);
+  // The configured client API key supplies the linked platform.
+  const linkedUser = await vault.createVault('user@example.com');
+  console.log('Linked user:', linkedUser);
 } catch (error) {
   console.error('Error creating vault:', error);
 }
@@ -45,7 +46,7 @@ file, folder, and storage methods.
 
 ## Import an Existing Vault
 
-### `importVault(vaultId, platformId)`
+### `importVault(vaultId, platformId?)`
 
 Imports an existing vault into the current platform context. This is useful for
 linking a user's pre-existing data to a new application or service instance.
@@ -53,8 +54,8 @@ linking a user's pre-existing data to a new application or service instance.
 **Parameters:**
 
 - `vaultId` (String): The ID of the vault to import.
-- `platformId` (String, optional): The target platform. When omitted, SDK access is
-  enabled and your client is linked directly to the user, without a platform.
+- `platformId` (String, optional): The target platform. When omitted, the server
+  resolves the platform linked to the configured client API key.
 
 **Example:**
 
@@ -64,9 +65,9 @@ try {
   const importResult = await vault.importVault('existing-vault-id', 'your-platform-id');
   console.log('Vault imported successfully:', importResult);
 
-  // Import without a platform
-  const sdkImport = await vault.importVault('existing-vault-id');
-  console.log('Vault linked to client:', sdkImport);
+  // Resolve the platform from the configured client API key
+  const linkedImport = await vault.importVault('existing-vault-id');
+  console.log('Vault linked to client:', linkedImport);
 } catch (error) {
   console.error('Import failed:', error);
 }

@@ -71,7 +71,7 @@ other API or network errors.
 
 ## Get Transaction History
 
-### `getTransactionHistory(vaultId, query)`
+### `getTransactionHistory(vaultId, query?)`
 
 Retrieves the authenticated vault user's wallet transactions in pages, newest
 first. You can optionally filter the results by transaction category.
@@ -81,8 +81,10 @@ first. You can optionally filter the results by transaction category.
 - `vaultId` (String): The vault ID used to identify the authenticated vault
   context. Required.
 - `query` (Object, optional): Pagination and filtering options. Defaults to `{}`.
-  - `page` (Number): Page number, starting at `1`. Defaults to `1`.
-  - `limit` (Number): Number of transactions per page. Defaults to `20`.
+  - `page` (Number | numeric String): Page number, starting at `1`. Defaults to
+    `1`. The SDK truncates fractional values and clamps them to at least `1`.
+  - `limit` (Number | numeric String): Number of transactions per page. Defaults
+    to `20`. The SDK truncates fractional values and clamps the value to `1`–`100`.
   - `category` (String): Optional transaction category filter. Blank values are
     ignored and non-string values are not sent.
 
@@ -158,8 +160,9 @@ new account actions.
 
 **Errors:**
 
-- `INVALID_PARAMETER`: `vaultId` is missing or not a string, or `query` is not
-  an object.
+- `INVALID_PARAMETER`: `vaultId` is missing or not a string, `query` is not an
+  object, or `page`/`limit` is not a finite number or numeric string. Fractional
+  and negative values are normalized by the SDK; they are not rejected.
 - `UNAUTHORIZED`: Authentication failed or no authenticated user context exists.
 - `FORBIDDEN`: The authenticated user cannot access the specified vault.
 - `SERVER_ERROR`: The transaction history could not be retrieved.

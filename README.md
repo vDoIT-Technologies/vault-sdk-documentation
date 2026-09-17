@@ -1,6 +1,6 @@
 # Vault SDK Documentation
 
-The **Vault SDK** is a Node.js library designed to provide seamless integration with the Vault Service. It allows developers to manage files, folders, and storage plans, as well as interact with the Twin Protocol backend for secure vault operations.
+The **Vault SDK** is a Node.js library for securely managing Vault files, folders, bots, storage plans, wallet data, and bot chat.
 
 ## Installation
 
@@ -22,6 +22,14 @@ VAULT_ACCESS_KEY=your-access-key
 VAULT_SECRET_KEY=your-secret-key
 VAULT_CLIENT_API_KEY=your-client-api-key
 VAULT_BASE_URL=https://api.your-service.com
+# Optional controls
+VAULT_WS_URL=wss://api.your-service.com/ws
+VAULT_ALLOW_INSECURE=false
+VAULT_UPLOAD_ROOT=/absolute/path/to/allowed/uploads
+VAULT_UPLOAD_HOSTS=additional.storage.example.com
+VAULT_TIMEOUT=30000
+VAULT_UPLOAD_TIMEOUT=60000
+VAULT_UPLOAD_CONCURRENCY=3
 ```
 
 ## Usage
@@ -39,11 +47,76 @@ const vault = new Vault({
   VAULT_CLIENT_API_KEY: process.env.VAULT_CLIENT_API_KEY,
   VAULT_BASE_URL: process.env.VAULT_BASE_URL,
   VAULT_WS_URL: process.env.VAULT_WS_URL,
+  VAULT_ALLOW_INSECURE: process.env.VAULT_ALLOW_INSECURE === "true",
+  VAULT_UPLOAD_ROOT: process.env.VAULT_UPLOAD_ROOT,
+  VAULT_UPLOAD_HOSTS: process.env.VAULT_UPLOAD_HOSTS,
+  VAULT_TIMEOUT: Number(process.env.VAULT_TIMEOUT) || 30000,
+  VAULT_UPLOAD_TIMEOUT: Number(process.env.VAULT_UPLOAD_TIMEOUT) || undefined,
+  VAULT_UPLOAD_CONCURRENCY: Number(process.env.VAULT_UPLOAD_CONCURRENCY) || 3,
 });
 ```
 
-All parameters are required — the constructor throws a `VaultError` with code
-`MISSING_CONFIG` listing any that are absent.
+`VAULT_ACCESS_KEY`, `VAULT_SECRET_KEY`, `VAULT_CLIENT_API_KEY`, and
+`VAULT_BASE_URL` are required. `VAULT_WS_URL` is required only for the general
+Vault WebSocket. The constructor throws `MISSING_CONFIG` when a required value
+is absent.
+
+These values are constructor options; the SDK does not load a `.env` file by
+itself. `VAULT_ALLOW_INSECURE` must be passed as the boolean `true` to take
+effect.
+
+The SDK requires HTTPS/WSS for non-local endpoints. Set
+`VAULT_ALLOW_INSECURE: true` only for a local test server. Upload paths can be
+restricted with `VAULT_UPLOAD_ROOT`; presigned upload hosts are checked against
+the built-in allowlist and `VAULT_UPLOAD_HOSTS`.
+
+Every API request is signed by the SDK with the configured access and secret
+keys. The client API key is sent automatically as an authentication header; do
+not put any of these credentials in user-controlled method arguments. Secret
+configuration values are non-enumerable and are redacted by `console.log()` and
+`JSON.stringify()`.
+
+Run the SDK in a trusted server-side process. Do not ship `VAULT_SECRET_KEY`,
+`VAULT_ACCESS_KEY`, or `VAULT_CLIENT_API_KEY` to a browser or mobile client.
+
+## First integration
+
+Use this sequence when adding Vault to an application:
+
+1. Obtain the three Vault credentials and API base URL from the Vault administrator.
+2. Initialize one `Vault` instance in your server application.
+3. Create a Vault user or import an existing Vault to obtain a `vaultId`.
+4. Pass that `vaultId` to the file, folder, bot, storage, wallet, or chat methods.
+5. Catch `ValidationError` and `VaultError` around SDK calls.
+
+```javascript
+import Vault, { VaultError, ValidationError } from "vault-sdk-dev";
+
+const vault = new Vault({
+  VAULT_ACCESS_KEY: process.env.VAULT_ACCESS_KEY,
+  VAULT_SECRET_KEY: process.env.VAULT_SECRET_KEY,
+  VAULT_CLIENT_API_KEY: process.env.VAULT_CLIENT_API_KEY,
+  VAULT_BASE_URL: process.env.VAULT_BASE_URL,
+});
+
+try {
+  // Pass a platform ID when your client is not already linked to one.
+  const user = await vault.createVault("user@example.com");
+  const vaultId = user.data.vaultId;
+
+  const files = await vault.getAllFiles(vaultId);
+  console.log(files.data);
+} catch (error) {
+  if (error instanceof ValidationError || error instanceof VaultError) {
+    console.error(error.code, error.message);
+  }
+  throw error;
+}
+```
+
+Most HTTP methods return the server's `{ success, message, data }` response.
+The main exceptions are WebSocket methods, which use events and connection
+metadata, and `getBotFileText()`, which returns extracted text directly.
 
 ### Uploading a File
 
@@ -334,9 +407,11 @@ The documentation is organized into the following sections:
 - **[Folder Operations](./Folder%20Operations/README.md)**: Create, rename, and delete folders.
 - **[Bot Operations](./Bot%20Operations/README.md)**: Create bots, retrieve details, upload files, and add existing drive files and folders to bot knowledge.
 - **[Bot Chat Operations](./Bot%20Chat%20Operations/README.md)**: Connect to live chat, join bots, send messages and typing indicators, and disconnect.
+- **[WebSocket Operations](./WebSocket%20Operations/README.md)**: Connect to the general Vault real-time event stream.
 - **[Bot Session Operations](./Bot%20Session%20Operations/README.md)**: Retrieve and export saved bot chat sessions and message history.
 - **[Storage Operations](./Storage%20Operations/README.md)**: Storage usage, plans, subscriptions, and upcoming plans.
 - **[Wallet Operations](./Wallet%20Operations/README.md)**: Retrieve Twin Points wallet balance and status.
+- **[Authentication Operations](./Authentication%20Operations/README.md)**: Create and redeem launch tokens for Vault and bot-chat authentication.
 - **[User Operations](./User%20Operations/README.md)**: Create vaults for users and import existing vaults.
 - **[Error Handling](./Error%20Handling/README.md)**: Detailed guide on handling SDK errors and codes.
 
@@ -350,6 +425,7 @@ The documentation is organized into the following sections:
 | `getAllFiles(vaultId)` | [File Operations](./File%20Operations/README.md) |
 | `deleteFile(vaultId, fileId)` | [File Operations](./File%20Operations/README.md) |
 | `renameItem(vaultId, itemId, newName)` | [File Operations](./File%20Operations/README.md) |
+| `renameFile(vaultId, itemId, newName)` (alias) | [File Operations](./File%20Operations/README.md#renameitemvaultid-itemid-newname) |
 | `addToStarred(vaultId, fileId, isStarred)` | [File Operations](./File%20Operations/README.md) |
 | `getStarredFiles(vaultId)` | [File Operations](./File%20Operations/README.md) |
 | `createFolder(vaultId, folderName, parentId?)` | [Folder Operations](./Folder%20Operations/README.md) |
@@ -372,6 +448,7 @@ The documentation is organized into the following sections:
 | `sendBotChatMessage(message, history?)` | [Bot Chat Operations](./Bot%20Chat%20Operations/README.md#send-a-chat-message) |
 | `sendBotChatTyping()` | [Bot Chat Operations](./Bot%20Chat%20Operations/README.md#send-a-typing-indicator) |
 | `disconnectBotChat()` | [Bot Chat Operations](./Bot%20Chat%20Operations/README.md#disconnect-from-bot-chat) |
+| `connectToWebsocket()` | [WebSocket Operations](./WebSocket%20Operations/README.md#connect-to-vault-events) |
 | `uploadFilesToBot(files, vaultId, botId)` | [Bot Operations](./Bot%20Operations/README.md#upload-files-to-a-bot) |
 | `addDriveFilesToBot(vaultId, botId, fileIds)` | [Bot Operations](./Bot%20Operations/README.md#add-drive-files-to-a-bot) |
 | `addDriveFoldersToBot(vaultId, botId, folderIds)` | [Bot Operations](./Bot%20Operations/README.md#add-drive-folders-to-a-bot) |
@@ -386,6 +463,9 @@ The documentation is organized into the following sections:
 | `cancelUpcomingPlan(vaultId)` | [Storage Operations](./Storage%20Operations/README.md) |
 | `createVault(email, platformId?)` | [User Operations](./User%20Operations/README.md) |
 | `importVault(vaultId, platformId?)` | [User Operations](./User%20Operations/README.md) |
+| `createVaultLaunchToken(vaultId, options?)` | [Authentication Operations](./Authentication%20Operations/README.md#create-a-vault-launch-token) |
+| `redeemVaultLaunchToken(launchToken)` | [Authentication Operations](./Authentication%20Operations/README.md#redeem-a-launch-token) |
+| `createBotChatAccessToken(vaultId, options?)` | [Authentication Operations](./Authentication%20Operations/README.md#create-a-bot-chat-access-token) |
 
 ## Migrating from earlier versions
 
